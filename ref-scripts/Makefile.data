@@ -1,0 +1,117 @@
+DATAS = ${DATADIR}/corp-modify.gz 			\
+		${DATADIR}/engi-modify.gz 			\
+		../data/freq-dir-corp.gz 			\
+		../data/freq-dir-engi.gz 			\
+		../data/freq-file-corp.gz 			\
+		../data/freq-file-engi.gz 			\
+		../data/interval-dir-corp.gz 		\
+		../data/interval-dir-engi.gz 		\
+		../data/interval-file-corp.gz 		\
+		../data/interval-file-engi.gz 		\
+		../data/dirlist-corp.txt 			\
+		../data/dirlist-engi.txt 			\
+		../data/freq-inter-dir-corp.txt 		\
+		../data/freq-inter-dir-engi.txt 		\
+		../data/freq-inter-file-engi.txt 	\
+		../data/freq-inter-file-corp.txt 	\
+		../data/depth-corp.txt 				\
+		../data/depth-engi.txt              \
+		../data/suffix-corp.txt				\
+		../data/suffix-engi.txt				\
+		../data/suffix-dir-corp.txt.gz		\
+		../data/suffix-dir-engi.txt.gz		\
+		../data/suffix-dir-corp-pdf.txt		\
+		../data/suffix-dir-engi-pdf.txt
+
+# ../data/dirlist-corp2.txt 			\
+# ../data/dirlist-engi2.txt 			\
+# ../data/day-corp.txt
+# ../data/day-engi.txt
+# ../data/dir-repeated-corp.txt
+# ../data/dir-repeated-engi.txt
+# ../data/freq-inter-dir-corp-xy.gz
+# ../data/freq-inter-dir-engi-xy.gz
+# ../data/freq-inter-file-corp-xy.gz
+# ../data/freq-inter-file-engi-xy.gz
+# ../data/hour-corp.txt
+# ../data/hour-engi.txt
+# ../data/locality-corp.txt
+# ../data/locality-engi.txt
+# ../data/suffix-dir-corp.txt
+# ../data/suffix-dir-engi.txt
+
+# ../data/temporal-dir-corp.txt
+# ../data/temporal-dir-engi.txt
+# ../data/temporal-file-corp.txt
+# ../data/temporal-file-engi.txt
+
+
+data:
+	-@if [ "x$$DATADIR" = "x" ] ; then \
+	echo "error: Undefined DATADIR: please export your data dir."; \
+	else	\
+	make -f Makefile.data data2; \
+	fi;
+
+data2: $(DATAS)
+	echo "make data complete!"
+
+${DATADIR}/corp-modify.gz : ${DATADIR}/corporate.gz
+	echo "please regenerate corp-modify.gz"
+
+${DATADIR}/engi-modify.gz : ${DATADIR}/engineer.gz
+	echo "please regenerate engi-modify.gz"
+
+../data/dirlist-corp.txt : ${DATADIR}/corporate.gz dirlist.pl
+	./dirlist.pl $< $@
+# ${DATADIR}/dirlist-corp2.txt :
+../data/dirlist-engi.txt : ${DATADIR}/engineer.gz dirlist.pl
+	./dirlist.pl $< $@
+
+# ${DATADIR}/dirlist-engi2.txt :
+
+../data/freq-file-corp.gz ../data/freq-dir-corp.gz : ${DATADIR}/corp-modify.gz freq_stat.pl
+	./freq_stat.pl $< ../data/freq-dir-corp.gz ../data/freq-file-corp.gz
+
+../data/freq-file-engi.gz ../data/freq-dir-engi.gz : ${DATADIR}/engi-modify.gz freq_stat.pl
+	./freq_stat.pl $< ../data/freq-dir-engi.gz ../data/freq-file-engi.gz
+
+../data/interval-file-corp.gz ../data/interval-dir-corp.gz : ${DATADIR}/corp-modify.gz interval_stat2.pl
+	./interval_stat2.pl $< ../data/interval-file-corp.gz ../data/interval-dir-corp.gz
+
+../data/interval-file-engi.gz ../data/interval-dir-engi.gz : ${DATADIR}/engi-modify.gz interval_stat2.pl
+	./interval_stat2.pl $< ../data/interval-file-engi.gz ../data/interval-dir-engi.gz
+
+../data/freq-inter-dir-corp.txt : ../data/freq-dir-corp.gz ../data/interval-dir-corp.gz freq-inter-dir-ht.pl
+	./freq-inter-dir-ht.pl -c ht ../data/freq-dir-corp.gz ../data/interval-dir-corp.gz $@ 
+
+../data/freq-inter-dir-engi.txt : ../data/freq-dir-engi.gz ../data/interval-dir-engi.gz  freq-inter-dir-ht.pl
+	./freq-inter-dir-ht.pl -c ht ../data/freq-dir-engi.gz ../data/interval-dir-engi.gz $@ 
+
+../data/freq-inter-file-corp.txt : ../data/freq-file-corp.gz ../data/interval-file-corp.gz freq-inter-ht.pl
+	./freq-inter-ht.pl -c ht ../data/freq-file-corp.gz ../data/interval-file-corp.gz $@ 
+
+../data/freq-inter-file-engi.txt : ../data/freq-file-engi.gz ../data/interval-file-engi.gz freq-inter-ht.pl
+	./freq-inter-ht.pl -c ht ../data/freq-file-engi.gz ../data/interval-file-engi.gz $@ 
+
+../data/depth-corp.txt : ${DATADIR}/corp-modify.gz depth_stat.pl
+	./depth_stat.pl $< $@
+../data/depth-engi.txt : ${DATADIR}/engi-modify.gz depth_stat.pl
+	./depth_stat.pl $< $@
+
+../data/suffix-corp.txt: ${DATADIR}/corp-modify.gz ../data/dirlist-corp.txt suffix_stat.pl
+	./suffix_stat.pl -d ../data/dirlist-corp.txt $< $@
+
+../data/suffix-engi.txt: ${DATADIR}/engi-modify.gz ../data/dirlist-engi.txt suffix_stat.pl
+	./suffix_stat.pl -d ../data/dirlist-engi.txt $< $@
+
+../data/suffix-dir-corp.txt.gz: ${DATADIR}/corp-modify.gz ../data/dirlist-corp.txt suffix_stat_dir.pl
+	./suffix_stat_dir.pl -d ../data/dirlist-corp.txt $< $@
+
+../data/suffix-dir-engi.txt.gz: ${DATADIR}/engi-modify.gz ../data/dirlist-engi.txt suffix_stat_dir.pl
+	./suffix_stat_dir.pl -d ../data/dirlist-engi.txt $< $@
+
+../data/suffix-dir-corp-pdf.txt: ../data/suffix-dir-corp.txt.gz ../data/suffix-corp.txt suffix-loc-dir.pl
+	./suffix-loc-dir.pl -c pdf ../data/suffix-corp.txt ../data/suffix-dir-corp.txt.gz $@
+../data/suffix-dir-engi-pdf.txt: ../data/suffix-dir-engi.txt.gz ../data/suffix-engi.txt suffix-loc-dir.pl
+	./suffix-loc-dir.pl -c pdf ../data/suffix-engi.txt ../data/suffix-dir-engi.txt.gz $@
