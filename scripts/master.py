@@ -5,6 +5,8 @@ Example: progname --ph52nc4"""
 
 import sys
 import getopt
+import os
+from multiprocessing import Process
 
 import entry
 
@@ -23,8 +25,8 @@ def manager():
 	for o, a in opts:
 		if o in ("-h", "-H", "--help"):
 			usage()
-		elif o == "--ph52nc4":
-			ph52nc4 = 1
+		elif o == "--h52nc4":
+			h52nc4 = 1
 		elif o in ("--he2nc3", "--hdfeos2nc3"):
 			he2nc3 = 1
 		else:
@@ -33,7 +35,10 @@ def manager():
 	if h52nc4 == 1:
 		for arg in args:
 			nprocs = get_nprocs(arg)
-			lauch_h52nc4(arg, nprocs)
+			p = Process(target=lauch_h52nc4, args=(arg, nprocs))
+			p.start()
+#			p.join()
+#lauch_h52nc4(arg, nprocs)
 	elif he2nc3 == 1:
 		for arg in args:
 			nproc = get_nprocs(arg)
@@ -47,15 +52,15 @@ def get_nprocs(arg):
 	return 1
 
 def lauch_h52nc4(arg, nprocs):
-	print entry.h52nc4
+#	print entry.h52nc4
 	print '({0}, {1})'.format(arg, nprocs)
+	os.system("/tmp/test")
 
 def lauch_he2nc3(arg, nprocs):
-#	print entry.he2nc3
-#	print '({0}, {1})'.format(arg, nprocs)
 	cmd = entry.he2nc3 + ' ' + arg + ' ' + arg[:len(arg)-3] + 'nc'
 	print cmd
 	os.system(cmd)
 
+		
 if __name__ == '__main__':
 	manager()
