@@ -7,6 +7,7 @@ import sys
 import getopt
 import os
 from multiprocessing import Process
+from threading import Thread
 
 import entry
 
@@ -35,14 +36,17 @@ def manager():
 	if h52nc4 == 1:
 		for arg in args:
 			nprocs = get_nprocs(arg)
-			p = Process(target=lauch_h52nc4, args=(arg, nprocs))
-			p.start()
-#			p.join()
-#lauch_h52nc4(arg, nprocs)
+#			p = Process(target=lauch_h52nc4, args=(arg, nprocs))
+#			p.start()
+			t = Thread(target=lauch_h52nc4, args=(arg, nprocs))
+			t.start()
+			
 	elif he2nc3 == 1:
 		for arg in args:
 			nproc = get_nprocs(arg)
-			lauch_he2nc3(arg, nproc)
+			#lauch_he2nc3(arg, nproc)
+			p = Process(target=lauch_he2nc3, args=(arg, nprocs))
+			p.start()
 
 def usage():
 	print __doc__
@@ -61,6 +65,10 @@ def lauch_he2nc3(arg, nprocs):
 	print cmd
 	os.system(cmd)
 
+def lauch_he2nc3_thread(arg, nprocs):
+	cmd = entry.he2nc3 + ' ' + arg + ' ' + arg[:len(arg)-3] + 'nc'
+	print cmd
+	os.system(cmd)
 		
 if __name__ == '__main__':
 	manager()
