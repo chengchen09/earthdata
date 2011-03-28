@@ -1,17 +1,18 @@
-#get .h5 files from ftp
+#!/usr/bin/env python
+"""Usage: ftpget dest-path ftp-source-path"""
 
 import ftplib
 import os
 import re
+import sys
 
-def find_hdf5(ftp, dirname):
+def usage():
+	print __doc__
+	sys.exit(-1)
+
+def download_all(ftp):
 	filelist = []
 	
-	try:
-		ftp.cwd(dirname)	# enter this dir
-	except ftplib.error_perm:
-		return;
-
 	ftp.retrlines('LIST', filelist.append)
 	print '---------------------------enter '+ dirname + '--------------------------------------'
 
@@ -43,32 +44,51 @@ def find_hdf5(ftp, dirname):
 	print '---------------------------quit ' + dirname + '--------------------------------------'
 
 
-def main():
-	# main body
-	ftpaddr = 'ftp.hdfgroup.uiuc.edu'
-	#ftpaddr = '192.168.0.254'
-	name = 'anonymous'
-	pswd = 'anonymous'
+def ftp_download_dir():
 	
+	if len(sys.argv) < 3:
+		usage()
+
+	dest_path = sys.argv[1]
+	if os.path.exists(dest_path) == False:
+		print 'The destination path is not founded or have no permission to access!'
+		sys.exit(-1)
+	
+	ftpdir = ''
+	ftpaddr, ftpdir = split_ftp(sys.argv[2])
+#	ftpaddr = sys.argv[2]
+	#try:
 	ftp = ftplib.FTP(ftpaddr)
-
 	ftp.login()
+	if ftpdir != '':
+		ftp.cwd(ftpdir)
+#	except ftplib.all_errors:
+#		print str(ftplib.all_errors)
+#		sys.exit(-1)	
+	dirlist = ftp.dir()
 
-	#ftp.retrlines('LIST')
-
-	ftp.cwd('/pub')
-
-	find_hdf5(ftp, 'outgoing')
+	download_all(ftp)
 
 	ftp.quit()
 	ftp.close()
 	
 	return
 
-
-filedir = '/home/chen/workspace/h5toNC4/h5diff/ftptest/'
+def split_ftp(ftpstr):
+	ftpaddr = ''
+	ftpdir = ''
+	index = ftpstr.find('/')
+	if index < 0:
+		ftpaddr = ftpstr
+		ftpdir = ''
+	else:
+		ftpaddr = ftpstr[:index]
+		ftpdir = ftpstr[index:]
+	
+	print ftpaddr, ftpdir
+	return ftpaddr, ftpdir
 
 if __name__ == '__main__':
-	main()
+	ftp_download_dir()
 
 
