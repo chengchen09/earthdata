@@ -6,6 +6,7 @@ Example: progname --ph52nc4"""
 import sys
 import getopt
 import os
+import time
 from multiprocessing import Process
 from threading import Thread
 
@@ -33,6 +34,8 @@ def manager():
 		else:
 			assert False, "unhanded option"
 	
+	start = time.clock()
+	print 'start time: ', start	
 	if h52nc4 == 1:
 		for arg in args:
 			nprocs = get_nprocs(arg)
@@ -40,13 +43,23 @@ def manager():
 #			p.start()
 			t = Thread(target=lauch_h52nc4, args=(arg, nprocs))
 			t.start()
-			
 	elif he2nc3 == 1:
+		procs = []
 		for arg in args:
-			nproc = get_nprocs(arg)
+			nprocs = get_nprocs(arg)
 			#lauch_he2nc3(arg, nproc)
-			p = Process(target=lauch_he2nc3, args=(arg, nprocs))
+			p = Thread(target=lauch_he2nc3, args=(arg, nprocs))
 			p.start()
+			procs.append(p)
+		for p in procs:
+			p.join()
+		print len(procs)
+	else:
+		usage()
+
+	end = time.clock()
+	print 'end time: ', end
+	print 'time used:', end-start 
 
 def usage():
 	print __doc__
@@ -62,13 +75,7 @@ def lauch_h52nc4(arg, nprocs):
 
 def lauch_he2nc3(arg, nprocs):
 	cmd = entry.he2nc3 + ' ' + arg + ' ' + arg[:len(arg)-3] + 'nc'
-	print cmd
 	os.system(cmd)
 
-def lauch_he2nc3_thread(arg, nprocs):
-	cmd = entry.he2nc3 + ' ' + arg + ' ' + arg[:len(arg)-3] + 'nc'
-	print cmd
-	os.system(cmd)
-		
 if __name__ == '__main__':
 	manager()
