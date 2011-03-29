@@ -84,12 +84,17 @@ def parse_url(url, dest_path, dir_q, file_q):
 def download_file(file_q, dest_path):
 	
 	fh = open(dest_path + 'error.log', 'w')
-	fh1 = open(dest_path + 'downloaded.log', 'w') 
+	fh1 = open(dest_path + 'downloaded.log', 'w')
+	count = 0
+	num = len(file_q)
 	for (url, path) in file_q:
 		try:
+			count += 1
 			print 'downloading ' + url
 			urllib.urlretrieve(url, path)
 			print path + ' downloaded'
+			left = num - count
+			print('There are {0} files left'.format(left))
 			fh.write(url + ' ' + path + '\n')
 		except:
 			print 'downloading faild'

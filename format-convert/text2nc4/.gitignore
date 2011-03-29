@@ -1,0 +1,5 @@
+*.o
+*.swp
+text2nc4
+Makefile
+.deps/
