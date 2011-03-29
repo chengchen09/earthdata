@@ -55,8 +55,8 @@ def ftp_download_dir():
 		sys.exit(-1)
 	
 	ftpdir = ''
-	ftpaddr, ftpdir = split_ftp(sys.argv[2])
-#	ftpaddr = sys.argv[2]
+#	ftpaddr, ftpdir = split_ftp(sys.argv[2])
+	ftpaddr = sys.argv[2]
 	#try:
 	ftp = ftplib.FTP(ftpaddr)
 	ftp.login()
@@ -66,8 +66,8 @@ def ftp_download_dir():
 #		print str(ftplib.all_errors)
 #		sys.exit(-1)	
 	dirlist = ftp.dir()
-
-	download_all(ftp)
+	print dirlist
+#	download_all(ftp)
 
 	ftp.quit()
 	ftp.close()
