@@ -11,14 +11,20 @@ import sys
 
 from collections import deque
 
-def usage():
-	print __doc__
+
+def usage(progname):
+	print "Usage: {0} dest-path source-url".format(progname)	
 	sys.exit(-1)
+
 
 def http_download_dir():
 	
 	if len(sys.argv) < 3:
-		usage()
+		usage(sys.argv[0])
+
+	if sys.argv[1] == '-r':
+		support.redo_failed(sys.argv[2], os.path.dirname(sys.argv[2]))
+		sys.exit(0)
 
 	dest_path = sys.argv[1]
 	if os.path.exists(dest_path) == False:
@@ -38,7 +44,7 @@ def http_download_dir():
 
 	while len(dir_q) > 0:
 		(url, path) = dir_q.popleft()
-		parse_url(url, path, dir_q, file_q)
+		parse_gtopo_url(url, path, dir_q, file_q)
 
 	# write the file url into file
 	fh = open(dest_path + 'file-url.log', 'w')
@@ -46,18 +52,19 @@ def http_download_dir():
 		fh.write(url + ' ' + path + '\n')
 	fh.close()
 
-	download_file(file_q, dest_path)
-	
-def parse_url(url, dest_path, dir_q, file_q):
+	support.download_file(file_q, dest_path)
+
+		
+def parse_gtopo_url(url, dest_path, dir_q, file_q):
 	src = urllib.urlopen(url).read()
-	pos = src.index('valign')
-	src = src[pos + 6:]
-	pos = src.index('valign')
+	pos = src.index('Parent Directory')
+	src = src[pos + 16:]
+	pos = src.index('img src=')
 #	i = 1	
 	start = 0
 	end = 0
 	while(pos >= 0):
-		src = src[pos + 6:]
+		src = src[pos + 8:]
 #		print src
 #		print '-------------------------------',i
 #		i = i + 1
@@ -79,29 +86,8 @@ def parse_url(url, dest_path, dir_q, file_q):
 		else:
 			file_q.append(t)
 			
-		pos = src.find('valign')
+		pos = src.find('img src=')
 
-def download_file(file_q, dest_path):
-	
-	fh = open(dest_path + 'error.log', 'w')
-	fh1 = open(dest_path + 'downloaded.log', 'w')
-	count = 0
-	num = len(file_q)
-	for (url, path) in file_q:
-		try:
-			count += 1
-			print 'downloading ' + url
-			urllib.urlretrieve(url, path)
-			print path + ' downloaded'
-			left = num - count
-			print('There are {0} files left'.format(left))
-			fh.write(url + ' ' + path + '\n')
-		except:
-			print 'downloading faild'
-			fh.write(url + ' ' + path + '\n')
-			
-	fh.close()
-	fh1.close()
 
 if __name__ == '__main__':
 	http_download_dir()
