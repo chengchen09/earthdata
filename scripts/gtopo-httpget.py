@@ -8,6 +8,7 @@ import urllib
 import os
 import re
 import sys
+import support
 
 from collections import deque
 
@@ -52,7 +53,7 @@ def http_download_dir():
 		fh.write(url + ' ' + path + '\n')
 	fh.close()
 
-	support.download_file(file_q, dest_path)
+	support.thread_download_file(file_q, dest_path)
 
 		
 def parse_gtopo_url(url, dest_path, dir_q, file_q):
