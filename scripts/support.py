@@ -6,7 +6,9 @@
 
 import urllib
 import sys
+import threading
 from collections import deque
+
 
 
 def redo_failed(failed_path, dest_path):
@@ -39,6 +41,48 @@ def download_file(file_q, dest_path):
 	failed_fh.close()
 	down_fh.close()
 
+def thread_dload_file(file_q, dest_path):
+	failed_fh = open(dest_path + 'failed.log', 'w')
+	down_fh = open(dest_path + 'downloaded.log', 'a')
+	thread_num = 4	# define the num of thread
+
+	lock = threading.Lock();
+	thds = []
+	count = [0]
+
+	for i in range(thread_num):
+		t = threading.Thread(target=thd_main, args=(file_q, faidled_fh, down_fh, count, lock))
+		thds.append(t)
+		thds[i].start()
+	for t in thds:
+		t.join()
+
+	failed_fh.close()
+	down_fh.close()
+
+
+def thd_main(file_q, failed_fh, down_fh, count, lock):
+	while(1):
+		lock.acquire();
+		ct = count[0]
+
+		if count[0] < len(file_q):
+			try:
+				(url, path) = file_q[count[0]]
+				count[0] += 1
+				print 'downloading ' + url
+				lock.release()
+
+				urllib.urlretrieve(url, path)
+				print path + ' downloaded'
+				left = num - ct
+				print('There are {0} files left'.format(left))
+				down_fh.write(url + ' ' + path + '\n')
+			except:
+				print path + ' downloading faild'
+				failed_fh.write(url + ' ' + path + '\n')
+
+		lock.release();
 
 def reload_failed(failed_fh, file_q):
 	for line in failed_fh:
