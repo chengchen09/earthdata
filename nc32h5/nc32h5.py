@@ -14,14 +14,23 @@ def usage():
 def nc32h5(nc3path, h5path):
 	nc3_fh = netCDF4.Dataset(nc3path, 'r', format='NETCDF3_CLASSIC')
 	
-	# global attributes
+	# read global attributes from nc3
 	global_attrs = []
 	get_attrs(nc3_fh, global_attrs)
 
+	# TODO: write global atributes into h5
+
 	# variables
 	variables = []
-	vars_name = nc3_fh.variables.keys()
-#	for name in nc3_fh.variables.keys():
+	#vars_name = nc3_fh.variables.keys()
+	for name in nc3_fh.variables.keys():
+		var_h = nc3_fh.variables[name]
+		print name
+		#print var_h[...]
+		print var_h.dimensions
+		print var_h.dtype
+		print var_h.shape
+		print var_h.ndim
 
 
 def get_attrs(obj_h, attrs):
@@ -35,6 +44,7 @@ def main():
 		usage(sys.argv[0])
 	
 	nc32h5(sys.argv[1], sys.argv[2])
-	
+
+
 if __name__ == '__main__':
 	main()
