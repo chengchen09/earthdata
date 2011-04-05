@@ -20,6 +20,14 @@ def gen():
 	temp[...] = -10
 	f.close()
 
+def gen_large():
+	f = netCDF4.Dataset('large.nc', 'w', format='NETCDF3_CLASSIC')
+	f.createDimension('x', 1000)
+	f.createDimension('y', 1000)
+	temp = f.createVariable('temp', 'f4', ('x', 'y'))
+	for i in range(1000):
+		temp[i,:] = i + 1
+	f.close()	
 
 if __name__ == '__main__':
-	gen()
+	gen_large()
