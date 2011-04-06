@@ -6,6 +6,7 @@ import netCDF4
 import numpy
 import h5py
 
+
 def usage(progname):
 	print "Usage: {0} netcdf3-file hdf5-file".format(progname)
 	sys.exit(1)
