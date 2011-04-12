@@ -24,7 +24,7 @@ def nc32h5(nc3path, h5path):
 	# variables
 	for name in nc3_fh.variables.keys():
 		ncvar_h = nc3_fh.variables[name]
-		h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, data=ncvar_h[...])
+		h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, data=ncvar_h)
 		
 		# attributes
 		attrs = []
@@ -48,9 +48,9 @@ def nc32h5_chunk(nc3path, h5path):
 	for name in nc3_fh.variables.keys():
 		ncvar_h = nc3_fh.variables[name]
 		if ncvar_h.ndim > 1:
-			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, chunks=(500,500), data=ncvar_h[...])
+			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, chunks=(1000,1000), data=ncvar_h)
 		else:
-			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, data=ncvar_h[...])
+			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, data=ncvar_h)
 			
 		# attributes
 		attrs = []
