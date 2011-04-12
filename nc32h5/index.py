@@ -4,6 +4,13 @@
 import sys
 import rtree
 import h5py
+import cPickle
+import pickle
+
+class FastRtree(rtree.Rtree):
+	def dumps(self, obj):
+		return cPickle.dumps(obj, -1)
+
 
 def create_index(h5path, variable, dimensions):
 	h5_fh = h5py.File(h5path, 'r')
@@ -18,7 +25,7 @@ def create_index(h5path, variable, dimensions):
 	
 	# create index
 	p = rtree.index.Property()
-	idx = rtree.index.Index(properties=p)
+	idx = FastRtree()
 	for chunk_obj in chunk_objs:
 		#print chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj']
 		idx.insert(chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj'])	
@@ -58,13 +65,42 @@ def create_2D_objs(var_id, dim_ids, chunk_objs):
 			#data = raw_input("")	
 			chunk_objs.append(chunk_obj)
 
+def dump_index(idx, file_path):
+	fh = open(file_path, 'w')
+	#idx_str = idx.dumps()
+	pickle.dump(idx, fh, -1)
+	#fh.write(idx_str)
+	fh.close()
+
+
+def load_index(file_path):
+	fh = open(file_path, 'r')
+	idx = pickle.load(fh)
+	fh.close()
+	print 'stop 1'
+	return idx
+
+
 def test_create():
 	dims = ['/y', '/x']
 	idx = create_index(sys.argv[1], '/z', dims)
-	
+	dump_index(idx, './rtree-index')
+	#test_search(idx)
+
+
+def test_search(idx):
+	print 'stop 2'
 	hits = list(idx.intersection((0, 0, 60, 60), objects=True))
+	print 'stop 3'
 	for item in hits:
 		print item.id, item.bbox, item.object
+	print 'stop 4'
+	
+
+def test_load():
+	idx = load_index('./rtree-index')
+	test_search(idx)
 
 if __name__ == '__main__':
-	test_create()
+	#test_create()
+	test_load()
