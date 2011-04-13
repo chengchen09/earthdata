@@ -18,7 +18,7 @@ def create_index(h5path, variable, dimensions):
 	
 	# create index
 	p = rtree.index.Property()
-	idx = rtree.index.Index(properties=p)
+	idx = rtree.index.Index('ETO_index', properties=p)
 	for chunk_obj in chunk_objs:
 		#print chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj']
 		idx.insert(chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj'])	
