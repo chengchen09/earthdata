@@ -4,6 +4,13 @@
 import sys
 import rtree
 import h5py
+import cPickle
+import pickle
+
+class FastRtree(rtree.Rtree):
+	def dumps(self, obj):
+		return cPickle.dumps(obj, -1)
+
 
 def create_index(h5path, variable, dimensions):
 	h5_fh = h5py.File(h5path, 'r')
@@ -18,7 +25,8 @@ def create_index(h5path, variable, dimensions):
 	
 	# create index
 	p = rtree.index.Property()
-	idx = rtree.index.Index('ETO_index', properties=p)
+
+	idx = rtree.Rtree(h5path, properties=p)
 	for chunk_obj in chunk_objs:
 		#print chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj']
 		idx.insert(chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj'])	
@@ -58,13 +66,29 @@ def create_2D_objs(var_id, dim_ids, chunk_objs):
 			#data = raw_input("")	
 			chunk_objs.append(chunk_obj)
 
+
+def load_index(index_path):
+	idx = rtree.Rtree(index_path)
+	return idx
+
+
 def test_create():
 	dims = ['/y', '/x']
 	idx = create_index(sys.argv[1], '/z', dims)
-	
+	#dump_index(idx, './rtree-index')
+	#test_search(idx)
+
+
+def test_search(idx):
 	hits = list(idx.intersection((0, 0, 60, 60), objects=True))
 	for item in hits:
 		print item.id, item.bbox, item.object
+	
+
+def test_load():
+	idx = rtree.Rtree('ETO_index')
+	test_search(idx)
 
 if __name__ == '__main__':
 	test_create()
+	#test_load()

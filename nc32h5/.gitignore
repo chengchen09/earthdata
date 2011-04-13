@@ -2,3 +2,7 @@
 *.nc
 *.h5
 *.grd
+*.tmp
+*.dat
+*.idx
+data/

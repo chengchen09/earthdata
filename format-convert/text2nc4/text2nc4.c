@@ -381,7 +381,7 @@ streamFile(const char *filename) {
 int main(int argc, char **argv) {
 	if(argc < 4){
 		printf("command format:\ntext2nc4 xml-source text-source target-file\n");
-		return 0;
+		return 1;
 	}
 
 	//MPI_Init( 0, 0 );
@@ -433,7 +433,7 @@ int main(int argc, char **argv) {
 	if ( mfile == NULL )
 	{
 		printf( "no such text file.\n" );
-		return 0;
+		return 1;
 	}
 	MPI_File_seek( mfile, 0, MPI_SEEK_SET );
 	MPI_File_read( mfile, buf, FILESIZE, MPI_CHAR, &status );

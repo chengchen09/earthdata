@@ -380,7 +380,7 @@ int main(int argc, char **argv) {
 	
 	if(argc < 4){
 		printf("command format:\nbin2nc4 xml-source bin-source target-file\n");
-		return 0;
+		return 1;
 	}
 
 	//MPI_Init( 0, 0 );
@@ -430,7 +430,7 @@ int main(int argc, char **argv) {
 	if ( mfile == NULL )
 	{
 		printf( "no such binary file.\n" );
-		return 0;
+		return 1;
 	}
 	MPI_File_seek( mfile, 0, MPI_SEEK_SET );
 	/*the kernel*/

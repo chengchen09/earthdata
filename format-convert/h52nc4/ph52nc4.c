@@ -191,9 +191,9 @@ int main(int argc, char *argv[])
     int ret = -1;
 
     /* check for input format */
-	if(argc < 2){
+	if(argc < 3){
 		printf("format: ph5toNC source_path destination_path\n");
-		return 0;
+		return 1;
 	}
 
 	if(argc == 2){
