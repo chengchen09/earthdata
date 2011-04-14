@@ -4,9 +4,10 @@ import rtree
 import sys
 
 def test_search(idx):
-	hits = list(idx.intersection((0, 0, 60, 60), objects=True))
+	hits = list(idx.intersection((0, 0, 60, 60), objects='raw'))
 	for item in hits:
-		print item.id, item.bbox, item.object
+		#print item.id, item.bbox, item.object
+		print item
 
 
 def test_load(index_path):

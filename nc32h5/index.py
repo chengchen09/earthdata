@@ -53,18 +53,34 @@ def create_2D_objs(var_id, dim_ids, chunk_objs):
 		nchunks *= n
 
 	for i in range(chunk_nums[0]):
-		xmin = x[i * chunk_dims[0]]
-		xmax = x[min(var_dims[0] - 1, (i + 1) * chunk_dims[0] - 1)]
+		xmin = i * chunk_dims[0]
+		xmax = min(var_dims[0] - 1, (i + 1) * chunk_dims[0] - 1)
 		for j in range(chunk_nums[1]):
-			ymin = y[j * chunk_dims[1]]
-			ymax = y[min(var_dims[1] - 1, (j + 1) * chunk_dims[1] - 1)]
+			ymin = j * chunk_dims[1]
+			ymax = min(var_dims[1] - 1, (j + 1) * chunk_dims[1] - 1)
 			chunk_obj = {}
 			chunk_obj['id'] = i * chunk_nums[1] + j
-			chunk_obj['coordinates'] = (xmin, ymin, xmax, ymax)
-			chunk_obj['obj'] = str(i) + ':' + str(j)
+			chunk_obj['coordinates'] = (x[xmin], y[ymin], x[xmax], y[ymax])
+			#chunk_obj['obj'] = str(xmin) + ',' + str(ymin) + ':' + str(xmax) + ',' + str(ymax)
+			chunk_obj['obj'] = (xmin, ymin, xmax, ymax)
 			#print chunk_obj['id'], chunk_obj['coordinates'], chunk_obj['obj']
 			#data = raw_input("")	
 			chunk_objs.append(chunk_obj)
+
+
+def search_index(h5path, variable, dimensions, bbox):
+	# TODO: check if the idx data exists
+	#if 
+	idx = rtree.Rtree(h5path)
+	hits = list(idx.intersection(bbox, objects='raw'))
+	#for item in hits:
+	#	print item
+	h5_fh = h5py.File(h5path, 'r')
+	var_id = h5_fh[variable]
+	for (xmin, ymin, xmax, ymax) in hits:
+		print xmin, ymin, xmax, ymax
+		print var_id[xmin:xmax,ymin:ymax]
+	h5_fh.close()
 
 
 def load_index(index_path):
