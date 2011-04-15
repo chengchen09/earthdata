@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """create the rtree index for a hdf dataset"""
 
-import sys
+import sys, os
 import rtree
 import h5py
 import cPickle
@@ -69,8 +69,11 @@ def create_2D_objs(var_id, dim_ids, chunk_objs):
 
 
 def search_index(h5path, variable, dimensions, bbox):
-	# TODO: check if the idx data exists
-	#if 
+	# check if the idx data exists
+	if !(os.path.isfile(h5path + '.idx')  and os.path.isfile(h5path + '.dat')):
+		print 'index files don\'t exist'
+		sys.exit(1)
+
 	idx = rtree.Rtree(h5path)
 	hits = list(idx.intersection(bbox, objects='raw'))
 	#for item in hits:

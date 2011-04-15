@@ -35,9 +35,10 @@ def nc32h5(nc3path, h5path):
 	h5_fh.close()
 
 
-def nc32h5_chunk(nc3path, h5path):
+def nc32h5_chunk(nc3path, h5path, ch_dims):
 	nc3_fh = netCDF4.Dataset(nc3path, 'r', format='NETCDF3_CLASSIC')
 	h5_fh = h5py.File(h5path, 'w')
+
 
 	# global attributes
 	attrs = []
@@ -48,7 +49,11 @@ def nc32h5_chunk(nc3path, h5path):
 	for name in nc3_fh.variables.keys():
 		ncvar_h = nc3_fh.variables[name]
 		if ncvar_h.ndim > 1:
-			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, chunks=(1000,1000), data=ncvar_h)
+			if len(ch_dims) != ncvar_h.ndim:
+				print 'number of dimension is not match the input dimension'
+				sys.exit(1)
+
+			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, chunks=tuple(ch_dims), data=ncvar_h)
 		else:
 			h5var_h = h5_fh.create_dataset(name, ncvar_h.shape, dtype=ncvar_h.dtype, data=ncvar_h)
 			
@@ -76,7 +81,10 @@ def main():
 	if len(sys.argv) < 3:
 		usage(sys.argv[0])
 	
-	nc32h5_chunk(sys.argv[1], sys.argv[2])
+	ch_dims = []
+	for item in sys.argv[3:]:
+		ch_dims.append(int(item))
+	nc32h5_chunk(sys.argv[1], sys.argv[2], ch_dims)
 
 
 if __name__ == '__main__':
