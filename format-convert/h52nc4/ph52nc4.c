@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
 
     /* check for input format */
 	if(argc < 3){
-		printf("format: ph5toNC source_path destination_path\n");
+		printf("Usage: ph52nc4 hdf5-infile nc4-outfile\n");
 		return 1;
 	}
 

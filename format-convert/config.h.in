@@ -9,14 +9,23 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <jasper/jasper.h> header file. */
+#undef HAVE_JASPER_JASPER_H
+
 /* Define to 1 if you have the `hdf5' library (-lhdf5). */
 #undef HAVE_LIBHDF5
 
 /* Define to 1 if you have the `hdf5_hl' library (-lhdf5_hl). */
 #undef HAVE_LIBHDF5_HL
 
+/* Define to 1 if you have the `jasper' library (-ljasper). */
+#undef HAVE_LIBJASPER
+
 /* Define to 1 if you have the `netcdf' library (-lnetcdf). */
 #undef HAVE_LIBNETCDF
+
+/* Define to 1 if you have the `png' library (-lpng). */
+#undef HAVE_LIBPNG
 
 /* Define to 1 if you have the `sz' library (-lsz). */
 #undef HAVE_LIBSZ
@@ -42,6 +51,9 @@
 
 /* Define to 1 if you have the <netcdf.h> header file. */
 #undef HAVE_NETCDF_H
+
+/* Define to 1 if you have the <png.h> header file. */
+#undef HAVE_PNG_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

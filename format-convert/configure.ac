@@ -134,6 +134,47 @@ fi
 AC_CHECK_HEADERS([netcdf.h],,AC_MSG_ERROR(cannot find netcdf.h in netcdf-4))
 AC_CHECK_LIB(netcdf, nc_open,, AC_MSG_ERROR([invalid netcdf object in netcdf-4]))	
 
+
+dnl ---------------------------------------------------------------------
+dnl jasper lib (for pGrib2nc4)
+AC_ARG_WITH([jasper],
+			[AC_HELP_STRING([--with-jasper=DIR],
+							[Specify path to external jasper library.])],
+			[if test "$withval" != no; then
+				if test "$withval" != yes; then
+					JASPER_DIR=$withval
+				fi
+			fi])
+
+if test -n "$JASPER_DIR"; then
+	CPPFLAGS="$CPPFLAGS -I$JASPER_DIR/include"
+	LDFLAGS="$LDFLAGS -L$JASPER_DIR/lib"
+fi
+
+AC_CHECK_HEADERS([jasper/jasper.h],,AC_MSG_ERROR(cannot find jasper.h in include directory))
+AC_CHECK_LIB([jasper], [jas_init], [], [AC_MSG_ERROR([invalid jasper library])])
+
+
+dnl ---------------------------------------------------------------------
+dnl png lib (for pGrib2nc4)
+AC_ARG_WITH([libpng],
+			[AC_HELP_STRING([--with-libpng=DIR],
+							[Specify path to external png library.])],
+			[if test "$withval" != no; then
+				if test "$withval" != yes; then
+					LIBPNG_DIR=$withval
+				fi
+			fi])
+
+if test -n "$LIBPNG_DIR"; then
+	CPPFLAGS="$CPPFLAGS -I$LIBPNG_DIR/include"
+	LDFLAGS="$LDFLAGS -L$LIBPNG_DIR/lib"
+fi
+
+AC_CHECK_HEADERS([png.h],,AC_MSG_ERROR(cannot find png.h in include directory))
+AC_CHECK_LIB([png], [png_access_version_number], [], [AC_MSG_ERROR([invalid libpng])])
+
+
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h syslog.h unistd.h])
 
@@ -145,5 +186,5 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gethostname memset])
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile h52nc4/Makefile bin2nc4/Makefile text2nc4/Makefile])
+AC_CONFIG_FILES([Makefile h52nc4/Makefile bin2nc4/Makefile text2nc4/Makefile grib2nc4/Makefile grib2nc4/g2clib/Makefile grib2nc4/src/Makefile])
 AC_OUTPUT

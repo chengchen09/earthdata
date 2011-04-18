@@ -379,7 +379,7 @@ streamFile(const char *filename) {
 int main(int argc, char **argv) {
 	
 	if(argc < 4){
-		printf("command format:\nbin2nc4 xml-source bin-source target-file\n");
+		printf("Usage: bin2nc4 xml-infile bin-infile nc-outfile\n");
 		return 1;
 	}
 

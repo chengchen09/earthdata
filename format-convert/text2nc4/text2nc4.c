@@ -380,7 +380,7 @@ streamFile(const char *filename) {
 
 int main(int argc, char **argv) {
 	if(argc < 4){
-		printf("command format:\ntext2nc4 xml-source text-source target-file\n");
+		printf("Usage: text2nc4 xml-infile text-infile nc-outfile\n");
 		return 1;
 	}
 

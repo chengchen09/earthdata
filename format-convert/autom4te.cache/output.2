@@ -687,6 +687,8 @@ with_zlib
 with_xml2
 with_hdf5
 with_netcdf4
+with_jasper
+with_libpng
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1324,6 +1326,8 @@ Optional Packages:
   --with-xml2=DIR         Specify path to external xml2 library.
   --with-hdf5=DIR         Specify path to external hdf5 library.
   --with-netcdf4=DIR      Specify path to external netcdf-4 library.
+  --with-jasper=DIR       Specify path to external jasper library.
+  --with-libpng=DIR       Specify path to external png library.
 
 Some influential environment variables:
   CC          C compiler command
@@ -4493,6 +4497,165 @@ else
 fi
 	
 
+
+
+@%:@ Check whether --with-jasper was given.
+if test "${with_jasper+set}" = set; then :
+  withval=$with_jasper; if test "$withval" != no; then
+				if test "$withval" != yes; then
+					JASPER_DIR=$withval
+				fi
+			fi
+fi
+
+
+if test -n "$JASPER_DIR"; then
+	CPPFLAGS="$CPPFLAGS -I$JASPER_DIR/include"
+	LDFLAGS="$LDFLAGS -L$JASPER_DIR/lib"
+fi
+
+for ac_header in jasper/jasper.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "jasper/jasper.h" "ac_cv_header_jasper_jasper_h" "$ac_includes_default"
+if test "x$ac_cv_header_jasper_jasper_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+@%:@define HAVE_JASPER_JASPER_H 1
+_ACEOF
+ 
+else
+  as_fn_error "cannot find jasper.h in include directory" "$LINENO" 5
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for jas_init in -ljasper" >&5
+$as_echo_n "checking for jas_init in -ljasper... " >&6; }
+if test "${ac_cv_lib_jasper_jas_init+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljasper  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jas_init ();
+int
+main ()
+{
+return jas_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jasper_jas_init=yes
+else
+  ac_cv_lib_jasper_jas_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jasper_jas_init" >&5
+$as_echo "$ac_cv_lib_jasper_jas_init" >&6; }
+if test "x$ac_cv_lib_jasper_jas_init" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+@%:@define HAVE_LIBJASPER 1
+_ACEOF
+
+  LIBS="-ljasper $LIBS"
+
+else
+  as_fn_error "invalid jasper library" "$LINENO" 5
+fi
+
+
+
+
+@%:@ Check whether --with-libpng was given.
+if test "${with_libpng+set}" = set; then :
+  withval=$with_libpng; if test "$withval" != no; then
+				if test "$withval" != yes; then
+					LIBPNG_DIR=$withval
+				fi
+			fi
+fi
+
+
+if test -n "$LIBPNG_DIR"; then
+	CPPFLAGS="$CPPFLAGS -I$LIBPNG_DIR/include"
+	LDFLAGS="$LDFLAGS -L$LIBPNG_DIR/lib"
+fi
+
+for ac_header in png.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "png.h" "ac_cv_header_png_h" "$ac_includes_default"
+if test "x$ac_cv_header_png_h" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+@%:@define HAVE_PNG_H 1
+_ACEOF
+ 
+else
+  as_fn_error "cannot find png.h in include directory" "$LINENO" 5
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for png_access_version_number in -lpng" >&5
+$as_echo_n "checking for png_access_version_number in -lpng... " >&6; }
+if test "${ac_cv_lib_png_png_access_version_number+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpng  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char png_access_version_number ();
+int
+main ()
+{
+return png_access_version_number ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_png_png_access_version_number=yes
+else
+  ac_cv_lib_png_png_access_version_number=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_png_png_access_version_number" >&5
+$as_echo "$ac_cv_lib_png_png_access_version_number" >&6; }
+if test "x$ac_cv_lib_png_png_access_version_number" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+@%:@define HAVE_LIBPNG 1
+_ACEOF
+
+  LIBS="-lpng $LIBS"
+
+else
+  as_fn_error "invalid libpng" "$LINENO" 5
+fi
+
+
+
 # Checks for header files.
 for ac_header in stdlib.h string.h syslog.h unistd.h
 do :
@@ -4606,7 +4769,7 @@ done
 
 ac_config_headers="$ac_config_headers config.h"
 
-ac_config_files="$ac_config_files Makefile h52nc4/Makefile bin2nc4/Makefile text2nc4/Makefile"
+ac_config_files="$ac_config_files Makefile h52nc4/Makefile bin2nc4/Makefile text2nc4/Makefile grib2nc4/Makefile grib2nc4/g2clib/Makefile grib2nc4/src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5324,6 +5487,9 @@ do
     "h52nc4/Makefile") CONFIG_FILES="$CONFIG_FILES h52nc4/Makefile" ;;
     "bin2nc4/Makefile") CONFIG_FILES="$CONFIG_FILES bin2nc4/Makefile" ;;
     "text2nc4/Makefile") CONFIG_FILES="$CONFIG_FILES text2nc4/Makefile" ;;
+    "grib2nc4/Makefile") CONFIG_FILES="$CONFIG_FILES grib2nc4/Makefile" ;;
+    "grib2nc4/g2clib/Makefile") CONFIG_FILES="$CONFIG_FILES grib2nc4/g2clib/Makefile" ;;
+    "grib2nc4/src/Makefile") CONFIG_FILES="$CONFIG_FILES grib2nc4/src/Makefile" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

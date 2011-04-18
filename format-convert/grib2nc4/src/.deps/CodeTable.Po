@@ -1,0 +1,147 @@
+CodeTable.o: CodeTable.c /usr/include/stdio.h /usr/include/features.h \
+ /usr/include/bits/predefs.h /usr/include/sys/cdefs.h \
+ /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+ /usr/include/gnu/stubs-32.h \
+ /usr/lib/gcc/i486-linux-gnu/4.4.3/include/stddef.h \
+ /usr/include/bits/types.h /usr/include/bits/typesizes.h \
+ /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
+ /usr/lib/gcc/i486-linux-gnu/4.4.3/include/stdarg.h \
+ /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
+ /usr/include/bits/stdio.h /usr/include/bits/stdio2.h \
+ /usr/include/stdlib.h /usr/include/sys/types.h /usr/include/time.h \
+ /usr/include/endian.h /usr/include/bits/endian.h \
+ /usr/include/bits/byteswap.h /usr/include/sys/select.h \
+ /usr/include/bits/select.h /usr/include/bits/sigset.h \
+ /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
+ /usr/include/bits/pthreadtypes.h /usr/include/alloca.h \
+ /usr/include/bits/stdlib.h /usr/include/string.h /usr/include/xlocale.h \
+ /usr/include/bits/string.h /usr/include/bits/string2.h \
+ /usr/include/bits/string3.h grb2.h wgrib2.h config.h fnlist.h \
+ CodeTable_0.0.dat CodeTable_1.2.dat CodeTable_1.3.dat CodeTable_1.4.dat \
+ CodeTable_3.1.dat CodeTable_3.2.dat CodeTable_3.8.dat CodeTable_3.15.dat \
+ CodeTable_3.21.dat CodeTable_4.0.dat CodeTable_4.3.dat CodeTable_4.4.dat \
+ CodeTable_4.9.dat CodeTable_4.10.dat CodeTable_4.11.dat \
+ CodeTable_4.15.dat CodeTable_4.230.dat CodeTable_5.0.dat \
+ CodeTable_5.1.dat CodeTable_6.0.dat
+
+/usr/include/stdio.h:
+
+/usr/include/features.h:
+
+/usr/include/bits/predefs.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/include/gnu/stubs-32.h:
+
+/usr/lib/gcc/i486-linux-gnu/4.4.3/include/stddef.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/typesizes.h:
+
+/usr/include/libio.h:
+
+/usr/include/_G_config.h:
+
+/usr/include/wchar.h:
+
+/usr/lib/gcc/i486-linux-gnu/4.4.3/include/stdarg.h:
+
+/usr/include/bits/stdio_lim.h:
+
+/usr/include/bits/sys_errlist.h:
+
+/usr/include/bits/stdio.h:
+
+/usr/include/bits/stdio2.h:
+
+/usr/include/stdlib.h:
+
+/usr/include/sys/types.h:
+
+/usr/include/time.h:
+
+/usr/include/endian.h:
+
+/usr/include/bits/endian.h:
+
+/usr/include/bits/byteswap.h:
+
+/usr/include/sys/select.h:
+
+/usr/include/bits/select.h:
+
+/usr/include/bits/sigset.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/sys/sysmacros.h:
+
+/usr/include/bits/pthreadtypes.h:
+
+/usr/include/alloca.h:
+
+/usr/include/bits/stdlib.h:
+
+/usr/include/string.h:
+
+/usr/include/xlocale.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+/usr/include/bits/string3.h:
+
+grb2.h:
+
+wgrib2.h:
+
+config.h:
+
+fnlist.h:
+
+CodeTable_0.0.dat:
+
+CodeTable_1.2.dat:
+
+CodeTable_1.3.dat:
+
+CodeTable_1.4.dat:
+
+CodeTable_3.1.dat:
+
+CodeTable_3.2.dat:
+
+CodeTable_3.8.dat:
+
+CodeTable_3.15.dat:
+
+CodeTable_3.21.dat:
+
+CodeTable_4.0.dat:
+
+CodeTable_4.3.dat:
+
+CodeTable_4.4.dat:
+
+CodeTable_4.9.dat:
+
+CodeTable_4.10.dat:
+
+CodeTable_4.11.dat:
+
+CodeTable_4.15.dat:
+
+CodeTable_4.230.dat:
+
+CodeTable_5.0.dat:
+
+CodeTable_5.1.dat:
+
+CodeTable_6.0.dat:
