@@ -45,7 +45,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_text2nc4_OBJECTS = text2nc4.$(OBJEXT)
+am_text2nc4_OBJECTS = text2nc4.$(OBJEXT) xml_parser.$(OBJEXT)
 text2nc4_OBJECTS = $(am_text2nc4_OBJECTS)
 text2nc4_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -149,7 +149,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-text2nc4_SOURCES = text2nc4.c
+text2nc4_SOURCES = text2nc4.c xml_parser.c xml_parser.h
 all: all-am
 
 .SUFFIXES:
@@ -232,6 +232,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/text2nc4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xml_parser.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
