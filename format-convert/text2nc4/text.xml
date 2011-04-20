@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <netcdf>
-	<dimension name="x" length="21600" />
-	<dimension name="y" length="10800" />
+	<dimension name="x" length="4" />
+	<dimension name="y" length="4" />
 	<variable name="x" shape="x" type="float 8">
 		<attribute name="unit" value="degree" />
 	</variable>

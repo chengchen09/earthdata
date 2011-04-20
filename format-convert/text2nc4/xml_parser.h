@@ -9,6 +9,11 @@
 $licence$
 * **********************************************************************/
 
+#ifndef _XML_PARSER_H
+#define _XML_PAESER_H
+
+#include <netcdf.h>
+
 #define DIM_MAX_NUM 5
 #define ATT_MAX_NUM 20
 #define VAR_MAX_NUM 5
@@ -31,6 +36,23 @@ struct var_xml_t {
 	struct att_xml_t att_list[ATT_MAX_NUM];
 };
 
+struct var_dat_t {
+	long nelmts;
+	nc_type type;
+	int ndims;
+	int stride;
+	int *dim_lens;
+	char **dim_names;
+	short *sht_data;
+	int *int_data;
+	long long *i64_data;
+	unsigned short *usht_data;
+	unsigned int *uint_data;
+	unsigned long long *ui64_data;
+	float *flt_data;
+	double *dbl_data;
+};
+
 int parser_xml_file(char *path);
 
 /*struct dim_list_t{
@@ -50,3 +72,4 @@ struct var_list_t{
 	att_xml_t *tail;
 	var_xml_t *next;
 };*/
+#endif
