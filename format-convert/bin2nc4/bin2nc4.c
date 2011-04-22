@@ -1,782 +1,375 @@
-#include <stdlib.h>
+/***********************************************************************
+* Filename : bin2nc4.c
+* Create : Chen Cheng 2011-04-21
+* Description: 
+* Modified   : 
+* Revision of last commit: $Rev$ 
+* Author of last commit  : $Author$ $date$
+* licence :
+$licence$
+* **********************************************************************/
+
 #include <stdio.h>
-#include "mpi.h"
-#include "hdf5.h"
-#include "netcdf.h"
+#include <stdlib.h>
+#include <string.h>
+#include <netcdf.h>
+#include <mpi.h>
 
-//#include<stdlib.h>
-//#include<string.h>
-#include <libxml/xmlreader.h>
+#include "xml_parser.h"
+#include "support.h"
 
-static  int dimensions = 0;
-static  int dimension = 0;
-static  int dimensionname = 0;
-static  int dimensionlength = 0;
-static  int variables = 0;
-static  int variable = 0;
-static  int variablename = 0;
-static  int variabletype = 0;
-static  int variablendims = 0;
-static  int variabledimid = 0;
-static  int variabledimids = 0;
-static  int variabledimidsdimid = 0;
+#define DIM_NAME_LEN 50
+#define PAGESIZE 4096
 
-//for inputing text datas
-#define MAX_VARIABLES 1000
-#define MAX_DATAS 10000
-#define FILESIZE 104857600	//100M chars
-#define ERRCODE 2
-#define ERR(e) {printf("Error:%s\n", nc_strerror(e)); exit(ERRCODE);}
-short shortData[ MAX_VARIABLES ][ MAX_DATAS ];
-int intData[ MAX_VARIABLES ][ MAX_DATAS ];
-char charData[ MAX_VARIABLES ][ MAX_DATAS ];
-float floatData[ MAX_VARIABLES ][ MAX_DATAS ];
-double doubleData[ MAX_VARIABLES ][ MAX_DATAS ];
-
-typedef struct _dimension{
-	char name[40];
-	char length[10];
-	struct _dimension *next;
-}dimension1, *dimensionPtr;
-
-
-typedef struct dimensionQueue{
-	dimensionPtr front;//队头
-	dimensionPtr rear;//队尾
-}dimensionQueue;
-
-typedef struct _dimname{
-	char name[40];
-	struct dimname *next;
-}dimname1, *dimnamePtr;
-
-typedef struct dimnameQueue{
-	dimnamePtr front;
-	dimnamePtr rear;
-}dimnameQueue;
-
-typedef struct variable{
-	char name[40];
-	char type[10];
-	char ndims[10];
-	dimnameQueue dimids;	
-	struct variable *next;
-}variable1, *variablePtr;
-
-
-typedef struct _variableQueue{
-	variablePtr front;
-	variablePtr rear;
-}variableQueue;
-
-typedef struct _data{
-	char source_filename[40];
-	char target_filename[40];
-	dimensionQueue dimQ;
-	variableQueue varQ;
-}data1;
-
-data1* dataxsz = NULL;
-dimensionPtr dimTemp;
-variablePtr varTemp;
-dimnamePtr dimnameTemp;
-//dimnameQueue dimnameQTemp;
-
-
-int initQueued(dimensionQueue *Q){
-	Q->front = (dimensionPtr)malloc(sizeof(dimension1));
-//	Q.rear = (dimensionPtr)malloc(sizeof(dimension));
-//	if (!Q.front)
-//		return false;		//存储分配失败
-	Q->front->next = NULL;
-	Q->rear = Q->front;
-	return 1;
-}
-
-int initQueuev(variableQueue *Q){
-	Q->front = (variablePtr)malloc(sizeof(variable1));
-//	Q.rear = (dimensionPtr)malloc(sizeof(dimension));
-//	if (!Q.front)
-//		return false;		//存储分配失败
-	Q->front->next = NULL;
-	Q->rear = Q->front;
-	return 1;
-}
-
-int initQueuedm(dimnameQueue *Q){
-	Q->front = (dimnamePtr)malloc(sizeof(dimname1));
-//	if(!Q.front)
-//		return false;
-	Q->front->next = NULL;
-	Q->rear = Q->front;
-	return 1;
-}
-
-
-
-int enQueued(dimensionQueue *Q, dimensionPtr e ){
-	if (!e) 
-		return 0;
-	e->next = NULL;
-	Q->rear->next = e;
-	Q->rear = e;
-	return 1;
-}
-
-int enQueuev(variableQueue *Q, variablePtr e ){
-	if (!e) 
-		return 0;
-	//printf("%d %s\n", e, "ssssssssss");
+#define NC_ASSERT(status) do { \
+	if((status) != NC_NOERR) { \
+		fprintf(stderr, "Line %d: %s\n", __LINE__, strerror(status)); \
+		exit(1); \
+	} \
+}while(0)
 	
-	e->next = NULL;
-//	printf("te");
-	Q->rear->next = e;
+#define MEMORY_CHECK(ptr) do { \
+	if(ptr == NULL){ \
+		fprintf(stderr, "line %d: memory allocate error!\n", __LINE__); \
+		exit(1); \
+	} \
+}while(0)
 
-	Q->rear = e;
-//	Q->rear->next =NULL;
-	return 1;
-}
+struct att_xml_t att_list[ATT_MAX_NUM];
+struct var_xml_t var_list[VAR_MAX_NUM];
+struct dim_xml_t dim_list[DIM_MAX_NUM];
+struct var_dat_t vdat_list[VAR_MAX_NUM];
+int natts = 0;
+int nvars = 0;
+int ndims = 0;
+int byteorder = LSBFIRST;
+int mpi_rank;
+int mpi_size;
 
-int enQueuedm(dimnameQueue *Q, dimnamePtr e){
-	if (!e) 
-		return 0;
-	e->next = NULL;
-	Q->rear->next = e;
-	Q->rear = e;
-	return 1;
-}
-
-int lengthofDQ(dimensionQueue Q){
-	dimensionPtr e = Q.front;
-	int ans = 0;
-	while(e->next != NULL){
-		ans ++;
-		e = e->next;
+void get_var_type(struct var_xml_t *var_p, struct var_dat_t *vdata_p) {
+	if((strcmp(var_p->type, "int 2")) == 0) {
+		vdata_p->type = NC_SHORT;
+		vdata_p->sht_data = malloc(vdata_p->nelmts * 2);
+		vdata_p->data = vdata_p->sht_data;
 	}
-	return ans;
+	else if((strcmp(var_p->type, "int 4")) == 0) {
+		vdata_p->type = NC_INT;
+		vdata_p->int_data = malloc(vdata_p->nelmts * 4);
+		vdata_p->data = vdata_p->int_data;
+	}
+	else if((strcmp(var_p->type, "int 8")) == 0) {
+		vdata_p->type = NC_INT64;
+		vdata_p->i64_data = malloc(vdata_p->nelmts * 8);
+		vdata_p->data = vdata_p->i64_data;
+	}
+	else if((strcmp(var_p->type, "uint 2")) == 0) {
+		vdata_p->type = NC_USHORT;
+		vdata_p->usht_data = malloc(vdata_p->nelmts * 2);
+		vdata_p->data = vdata_p->usht_data;
+	}
+	else if((strcmp(var_p->type, "uint 4")) == 0) {
+		vdata_p->type = NC_UINT;
+		vdata_p->uint_data = malloc(vdata_p->nelmts * 4);
+		vdata_p->data = vdata_p->uint_data;
+	}
+	else if((strcmp(var_p->type, "uint 8")) == 0) {
+		vdata_p->type = NC_UINT64;
+		vdata_p->ui64_data = malloc(vdata_p->nelmts * 8);
+		vdata_p->data = vdata_p->ui64_data;
+	}
+	else if((strcmp(var_p->type, "float 4")) == 0) {
+		vdata_p->type = NC_FLOAT;
+		vdata_p->flt_data = malloc(vdata_p->nelmts * 4);
+		vdata_p->data = vdata_p->flt_data;
+	}
+	else if((strcmp(var_p->type, "float 8")) == 0) {
+		vdata_p->type = NC_DOUBLE;
+		vdata_p->dbl_data = malloc(vdata_p->nelmts * 8);
+		vdata_p->data = vdata_p->dbl_data;
+	}
+	else {
+		fprintf(stderr, "type defined is not supported in variable %s\n", var_p->name);
+		exit(1);
+	}
+	MEMORY_CHECK(vdata_p->data);
+
+	return;
 }
 
-/**
- * processNode:
- * @reader: the xmlReader
- *
- * Dump information about the current node
- */
-static void
-processNode(xmlTextReaderPtr reader) {
-    const xmlChar *name, *value;
-    int i;
-   /* 
-    int counter = 0;
-    int counter2 = 0;
-    int counter3 = 0;
-    int counterndim = 0;
-    int nowstate = 0;
-    char temp[20];
-    */
+void get_var_shape(struct var_xml_t *var_p, struct var_dat_t *vdata_p) {
+	char *sep = " ";
+	char *shape, *token;
+	int i = 0;
 
-    
-    name = xmlTextReaderConstName(reader);
-    if (name == NULL)
-	name = BAD_CAST "--";
+	shape = (char *)malloc((strlen(var_p->shape) + 1) * sizeof(char));
+	if(shape == NULL) {
+		fprintf(stderr, "LINE %d: memory allocate error\n", __LINE__);
+		exit(1);
+	}
+	strcpy(shape, var_p->shape);
+	
+	token = strtok(shape, sep);
+	while(token){
+		strcpy(&(vdata_p->dim_names[i][0]), token);
+		i++;
+		token = strtok(NULL, sep);
+	}
 
-    value = xmlTextReaderConstValue(reader);
-    
-/*	if (sourcefilename == 1){
-	strcpy(dataxsz->source_filename, value);
-	printf("%s %s\n",dataxsz->source_filename, "source_filename");
-	sourcefilename++;
-    }
-    if (targetfilename == 1){
-	strcpy(dataxsz->target_filename, value);
-	printf("%s %s\n", dataxsz->target_filename, "target_filename");
-	targetfilename++;
-    }
-    if (xmlStrcmp(name, "source-filename") == 0){
-	sourcefilename++;
-    }
-    else if (xmlStrcmp(name, "target-filename") == 0){
-	targetfilename++;
-    }*/
+	vdata_p->ndims = i;
+	free(shape);
 
-    if(xmlStrcmp(name, "dimensions") == 0){
-	dimensions++;
-    }
-    else if(xmlStrcmp(name, "variables") == 0)
-	variables++;
+}
 
+void write_nc_header(int grp_id) {
+	int i, j, status;
+	int *dimids, *var_dimids;
+	size_t len;
 
-    if (dimensions == 1){
-	if (dimension % 2 == 1){
-		if (dimensionname % 2 == 1){
-			//printf("%s %s %s\n", name, value,"dimensionname");
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(dimTemp->name, value);
-			//	printf("%s %s %s\n", dimTemp->name, value, "dimensionname");
-			}
-		}else if(dimensionlength % 2 == 1){
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(dimTemp->length, value);
-			//	printf("%s %s %s\n", dimTemp->length, value, "dimensionlength");
-			}
+	/*
+	 * define global attributes
+	 */
+	for(i = 0; i < natts; i++) {
+		len = strlen(att_list[i].value);
+		status = nc_put_att_text(grp_id, NC_GLOBAL, att_list[i].name, len + 1, att_list[i].value);
+		NC_ASSERT(status);
+	}
+
+	/*
+	 * define dimensions
+	 */
+	dimids = (int *)malloc(ndims * sizeof(int));
+	if(dimids == NULL){
+		fprintf(stderr, "line %d: memory allocate error!\n", __LINE__);
+		exit(1);
+	}
+	for(i = 0; i < ndims; i++) {
+		status = nc_def_dim(grp_id, dim_list[i].name, atoi(dim_list[i].length), &(dimids[i]));
+		NC_ASSERT(status);
+	}
+
+	/* 
+	 * define variables
+	 */
+	var_dimids = (int *)malloc(ndims * sizeof(int));
+	MEMORY_CHECK(var_dimids);
+	
+	for(i = 0; i < nvars; i++) {
+		/* dimension lens */
+		vdat_list[i].dim_lens = (int *) malloc(vdat_list[i].ndims * sizeof(int));
+		MEMORY_CHECK(vdat_list[i].dim_lens);
+	
+		/* dimension names */
+		vdat_list[i].dim_names = (char **)malloc(ndims * sizeof(char *));
+		MEMORY_CHECK(vdat_list[i].dim_names);
+		for(j = 0; j < ndims; j++) {
+			vdat_list[i].dim_names[j] = (char *)malloc(DIM_NAME_LEN * sizeof(char));
+			MEMORY_CHECK(vdat_list[i].dim_names[j]);
 		}
-		if (xmlStrcmp(name, "name") == 0){
-			dimensionname ++;
-		}else if (xmlStrcmp(name, "length") == 0){
-			dimensionlength ++;
+	}
+
+	for(i = 0; i < nvars; i++) {
+		get_var_shape(&var_list[i], &vdat_list[i]);
+		
+		vdat_list[i].nelmts = 1;
+		for(j = 0; j < vdat_list[i].ndims; j++) {
+			status = nc_inq_dimid(grp_id, vdat_list[i].dim_names[j], &var_dimids[j]);
+			NC_ASSERT(status);
+			int tmp_len; 
+			status = nc_inq_dimlen(grp_id, var_dimids[j], &tmp_len);
+			vdat_list[i].dim_lens[j] = tmp_len;
+			vdat_list[i].nelmts *= tmp_len;
 		}
 		
-	}
-    }
-    //new and add		
-    if (dimensions == 1){
-	if (xmlStrcmp(name, "dimension") == 0){
-		//counter2++;
-		dimension++;
-		if (dimension %2 == 1){
-			dimTemp = (dimensionPtr)malloc(sizeof(dimension1));					       
-		}else if(dimension % 2 == 0) {
-			enQueued(&dataxsz->dimQ, dimTemp);
-		}
-			
-	}
-	
-    }
-	
+		get_var_type(&var_list[i], &vdat_list[i]);
+		
+		status = nc_def_var(grp_id, var_list[i].name, vdat_list[i].type, vdat_list[i].ndims, var_dimids, &vdat_list[i].varid);
+		NC_ASSERT(status);
 
-    if (variables == 1){
-	if (variable % 2 == 1){
-
-		if (variablename % 2 == 1){
-			//printf("%s %s %s\n", name, value,"dimensionname");
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(varTemp->name, value);
-			//	printf("%s %s %s\n", dimTemp->name, value, "dimensionname");
-			}
-		}else if(variabletype % 2 == 1){
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(varTemp->type, value);
-			//	printf("%s %s %s\n", dimTemp->length, value, "dimensionlength");
-			}
-		}else if (variablendims % 2 == 1){
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(varTemp->ndims, value);
-			}
-		}else if (variabledimid % 2 == 1){
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(dimnameTemp->name, value);
-			}
-		}else if (variabledimidsdimid % 2 == 1){
-			if (xmlStrcmp("#text", name) == 0){
-				strcpy(dimnameTemp->name, value);
-				//printf("%s %s\n", value, "dimidsdimid");
-			}
-		}
-
-		if (variabledimids % 2 == 1){
-			if (xmlStrcmp(name, "dimid") == 0){
-				variabledimidsdimid++;
-				if (variabledimidsdimid % 2 == 1){
-					dimnameTemp = (dimnamePtr)malloc(sizeof(dimname1));
-					//printf("%d %s\n", variabledimidsdimid, "newdinamefor the queue");
-				}else
-					enQueuedm(&varTemp->dimids, dimnameTemp);
-			}
-		}else if (variabledimids % 2 == 0){
-			if (xmlStrcmp(name, "dimid") == 0){
-				variabledimid++;
-				if (variabledimid % 2 == 1)
-					dimnameTemp = (dimnamePtr)malloc(sizeof(dimname1));
-				else 
-					enQueuedm(&varTemp->dimids, dimnameTemp);
-				
-			}
-		}
-
-		if (xmlStrcmp(name, "name") == 0){
-			variablename ++;
-		}else if (xmlStrcmp(name, "type") == 0){
-			variabletype ++;
-		}else if (xmlStrcmp(name, "ndims") == 0){
-			variablendims ++;
-		}else if (xmlStrcmp(name, "dimids") == 0){
-			variabledimids ++;
-			if (variabledimids % 2 == 1){
-				//printf("wo jia da lan niu\n");
-			//	dimnameTemp = (dimnamePtr)malloc(sizeof(dimname1));
-			}
-		//	else 
-			//	enQueuedm(&varTemp->dimids, dimnameTemp);
-		}		
-
-	}
-    }
-
-    //new and add
-    if (variables == 1){
-	if (xmlStrcmp(name, "variable") == 0){
-		variable++;
-		if (variable % 2 == 1){
-			varTemp = (variablePtr)malloc(sizeof(variable1));		
-			initQueuedm(&varTemp->dimids);
-//			printf("here am i\n");
-//			printf("%d   ",varTemp);
-		}else if(variable % 2 == 0){
-//			printf("%d   ",varTemp);
-			enQueuev(&dataxsz->varQ, varTemp);
-//			printf("%s\n", "xszissb!!!");
+		/* define varialbe attributes */
+		for(j = 0; j < var_list[i].natts; j++) {
+			len = strlen(var_list[i].att_list[j].value);
+			status = nc_put_att_text(grp_id, vdat_list[i].varid, var_list[i].att_list[j].name, len + 1, var_list[i].att_list[j].value);
+			NC_ASSERT(status);
 		}
 	}
-    }
 
-/*
-    printf("%d %d %s %d %d", 
-	    xmlTextReaderDepth(reader),
-	    xmlTextReaderNodeType(reader),
-	    name,
-	    xmlTextReaderIsEmptyElement(reader),
-	    xmlTextReaderHasValue(reader));
-    printf(" %s\n", value);
-*/
-  /*  if (value == NULL)
-	printf("\n");
-    else {
-        if (xmlStrlen(value) > 40)
-            printf(" %.40s...\n", value);
-        else
-	    printf(" %s\n", value);
-    }
-*/
+	/*
+	 * free memory
+	 */
+	free(var_dimids);
+	free(dimids);
 }
 
-/**
- * streamFile:
- * @filename: the file name to parse
- *
- * Parse and print information about an XML file.
- */
-static void
-streamFile(const char *filename) {
-    xmlTextReaderPtr reader;
-    int ret;
 
-    reader = xmlReaderForFile(filename, NULL, 0);
-    if (reader != NULL) {
-        ret = xmlTextReaderRead(reader);
-        while (ret == 1) {
-            processNode(reader);
-            ret = xmlTextReaderRead(reader);
-        }
-        xmlFreeTextReader(reader);
-        if (ret != 0) {
-            fprintf(stderr, "%s : failed to parse\n", filename);
-        }
-    } else {
-        fprintf(stderr, "Unable to open %s\n", filename);
-    }
-}
 
-int main(int argc, char **argv) {
-	
-	if(argc < 4){
-		printf("Usage: bin2nc4 xml-infile bin-infile nc-outfile\n");
-		return 1;
+int get_local_btd() {
+	int btd = -1;
+	union
+	{
+		unsigned short s;
+		unsigned char c[sizeof(unsigned short)];
+	} un;
+	un.s = 0x0201;
+	if(2 == sizeof(unsigned short)) {
+		if((2 == un.c[0]) && (1 == un.c[1]))
+			btd = MSBFIRST;
+		else if((1 == un.c[0]) && (2 == un.c[1]))
+			btd = LSBFIRST;
+		else {
+			fprintf(stderr, "byte order unknow\n");
+			exit(1);
+		}
+	}
+	else {
+		fprintf(stderr, "sizeof(unsigned short) = %u\n", (unsigned int)sizeof(unsigned short));
+		exit(1);
 	}
 
-	//MPI_Init( 0, 0 );
-	//MPI_File mfile;
-	//MPI_Status status;
+	return btd;
+} 
 
-	/* init */
-	int numOfDim = 0;
-	int numOfVar = 0;
-	int numofDimForVar = 0;
 
-	/* MPI stuff */
-	int mpi_namelen;
-	char mpi_name[MPI_MAX_PROCESSOR_NAME];
-	MPI_Comm comm = MPI_COMM_WORLD;
-	MPI_Info info = MPI_INFO_NULL;
-	
-	/* MPI init */
-	int rank, size;
-	MPI_Init( 0, 0 );
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank) ;
-	MPI_Comm_size(MPI_COMM_WORLD, &size) ;
-        MPI_Get_processor_name(mpi_name, &mpi_namelen);
-	MPI_File mfile;
+void read_bin(char *path) {
+	int local_btd;
+	int i;
+	MPI_File fp;
 	MPI_Status status;
 	
+	MPI_File_open(MPI_COMM_SELF, path, MPI_MODE_RDONLY, MPI_INFO_NULL, &fp);
 
-    /*
-     * this initialize the library and check potential ABI mismatches
-     * between the version it was compiled for and the actual shared
-     * library used.
-     */
-//    LIBXML_TEST_VERSION
-
-    dataxsz = (data1*)malloc(sizeof(data1));
-    initQueued(&dataxsz->dimQ);
-    initQueuev(&dataxsz->varQ);
-//    dataxsz->dimQ.front = (dimension1*)malloc(sizeof(dimension1));
-
-    streamFile(argv[1]);
-
-    //printf("%s\n", "near the end");
-
-/*start analysis binary data (by LiuRongji)*/
-	/*pre-process*/
-	MPI_File_open( MPI_COMM_WORLD, argv[ 2 ], MPI_MODE_RDONLY, MPI_INFO_NULL, &mfile );
-	if ( mfile == NULL )
-	{
-		printf( "no such binary file.\n" );
-		return 1;
-	}
-	MPI_File_seek( mfile, 0, MPI_SEEK_SET );
-	/*the kernel*/
-	dimensionPtr bases = dataxsz->dimQ.front->next;	//to get the length of dimemsions, so we can calculate the length of variables
-	variablePtr cur_var = dataxsz->varQ.front->next;//current variable
-	int scount = 0;	//index of current "short"
-	int icount = 0;	//index of current "int"
-	int ccount = 0;	//index of current "char"
-	int fcount = 0;	//index of current "float"
-	int dcount = 0;	//index of current "double"
-	while ( cur_var != NULL )
-	{
-		int i = 0;
-		int length = 1;
-		int valid = 0;
-		dimnamePtr dim_id = cur_var->dimids.front->next;
-		while ( dim_id != NULL )	//find the real dimemsion of "dim_id", to get it's length; then we can get the length of "cur_var"
-		{
-			bases = dataxsz->dimQ.front->next;
-			int find = 0;
-			while ( bases != NULL )
-			{
-				if ( strcmp( dim_id->name, bases->name ) == 0 )
-				{
-					find = 1;
-					break;
-				}
-				bases = bases->next;
-			}
-			if ( find == 1 )
-			{
-				length *= atoi( bases->length );
-				valid = 1;
-			}
-			else
-			{
-				printf( "can not find some dimension\n" );
-				valid = 0;
-			}
-			dim_id = dim_id->next;
-		}
-		if ( valid == 1 )
-		{
-			if ( cur_var->type[ 0 ] == 'c' )
-			{
-				char cc;
-				for ( i = 0; i < length; i++ )
-				{
-					MPI_File_read( mfile, &cc, 1, MPI_CHAR, &status );
-					charData[ ccount ][ i ] = cc;
-				}
-				ccount++;
-			}
-			else if ( cur_var->type[ 0 ] == 's' )
-			{
-				short ss;
-				for ( i = 0; i < length; i++ )
-				{
-					MPI_File_read( mfile, &ss, 1, MPI_SHORT, &status );
-					shortData[ scount ][ i ] = ss;
-				}
-				scount++;
-			}
-			else if ( cur_var->type[ 0 ] == 'i' )
-			{
-				int ii;
-				for ( i = 0; i < length; i++ )
-				{
-					MPI_File_read( mfile, &ii, 1, MPI_INT, &status );
-					intData[ icount ][ i ] = ii;
-				}
-				icount++;
-			}
-			else if ( cur_var->type[ 0 ] == 'f' )
-			{
-				float ff;
-				for ( i = 0; i < length; i++ )
-				{
-					MPI_File_read( mfile, &ff, 1, MPI_FLOAT, &status );
-					floatData[ fcount ][ i ] = ff;
-				}
-				fcount++;
-			}
-			else if ( cur_var->type[ 0 ] == 'd' )
-			{
-				double dd;
-				for ( i = 0; i < length; i++ )
-				{
-					MPI_File_read( mfile, &dd, 1, MPI_DOUBLE, &status );
-					doubleData[ dcount ][ i ] = dd;
-				}
-				dcount++;
-			}
-		}
-		else
-		{
-			printf( "can not calculate the length of current variable.\n" );
-		}
-		cur_var = cur_var->next;
-	}
-	/*
-	printf( "short: %d\n", shortData[ 0 ][ 0 ] );
-	printf( "int: %d\n", intData[ 0 ][ 0 ] );
-	printf( "char: %c\n", charData[ 0 ][ 0 ] );
-	printf( "float0: %f\n", floatData[ 0 ][ 0 ] );
-	printf( "float1: %f\n", floatData[ 1 ][ 0 ] );
-	printf( "float2: %f\n", floatData[ 2 ][ 0 ] );
-	printf( "double: %f\n", doubleData[ 0 ][ 0 ] );
-	*/
-	/*post-process*/
-	MPI_File_close( &mfile );
-/*finish analysis binary data.*/
-	/* end read file (part 2)*/
-
-	/* start part 3 */
-	/* define IDs */
+	local_btd = get_local_btd();
 	
-	int ncid;
-	int dimids[MAX_VARIABLES];
-	int varids[MAX_VARIABLES];
-	size_t* start1;
-	size_t* count;
-
-	int retval;
-        /* create the file. */
-        if ((retval = nc_create_par(argv[3], NC_NETCDF4|NC_MPIIO, comm, info, &ncid)))
-                ERR(retval);
-
-	/* define the dimemsions. hand back an id. */
-	dimensionPtr my = dataxsz->dimQ.front;
-	int count_dim = 0;
-	while (my -> next != NULL) {
-		my = my -> next;
-		if ((retval = nc_def_dim(ncid, my->name, atoi(my->length), &dimids[count_dim])))
-                	ERR(retval);
-		count_dim ++;
-	}
-	printf("end define dim\n");
-	/* define the varible */
-	int count_var = 0;
-	int ii = 0;
-	int jj = 0;     	//for inner count
-	int *ddimids;
-	variablePtr myv = dataxsz->varQ.front;
-	dimnamePtr mydm;
-	while (myv -> next != NULL){
-		myv = myv -> next;
-		ddimids = (int *)malloc(atoi(myv->ndims));
-		mydm = myv->dimids.front;
-		for (ii = 0; ii < atoi(myv -> ndims); ii ++){
-			mydm = mydm -> next;
-			my = dataxsz->dimQ.front;
-			jj = 0;
-			while (my->next != NULL){
-				my = my->next;
-				if (strcmp(my->name, mydm->name) == 0){
-					ddimids[ii] = dimids[jj];
-					break;
-				}
-				else {
-					jj ++;
-				}	
-			}
+	/* no need to convert byte order */
+	if(local_btd == byteorder) {
+		for(i = 0; i < nvars; i++) {
+			if(NC_SHORT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].sht_data, vdat_list[i].nelmts, MPI_SHORT, &status);
+			else if(NC_USHORT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].usht_data, vdat_list[i].nelmts, MPI_UNSIGNED_SHORT, &status);
+			else if(NC_INT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].int_data, vdat_list[i].nelmts, MPI_INT, &status);
+			else if(NC_UINT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].uint_data, vdat_list[i].nelmts, MPI_UNSIGNED, &status);
+			else if(NC_INT64 == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].i64_data, vdat_list[i].nelmts, MPI_LONG_LONG, &status);
+			else if(NC_UINT64 == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].ui64_data, vdat_list[i].nelmts, MPI_UNSIGNED_LONG_LONG, &status);
+			else if(NC_FLOAT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].flt_data, vdat_list[i].nelmts, MPI_FLOAT, &status);
+			else if(NC_DOUBLE == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].dbl_data, vdat_list[i].nelmts, MPI_DOUBLE, &status);
 		}
-		if (strcmp(myv->type, "byte") == 0){
-			if ((retval = nc_def_var(ncid, myv->name, NC_BYTE, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		} else if (strcmp(myv->type, "short") == 0){
-			if ((retval = nc_def_var(ncid, myv->name, NC_SHORT, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		} else if (strcmp(myv->type, "int") == 0) {
-			if ((retval = nc_def_var(ncid, myv->name, NC_INT, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		} else if (strcmp(myv->type, "float") == 0){
-			if ((retval = nc_def_var(ncid, myv->name, NC_FLOAT, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		} else if (strcmp(myv->type, "double") == 0){
-			if ((retval = nc_def_var(ncid, myv->name, NC_DOUBLE, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		} else {
-			if ((retval = nc_def_var(ncid, myv->name, NC_CHAR, atoi(myv->ndims), &ddimids[0], &varids[count_var])))
-				ERR(retval);
-		}
-		free (ddimids);
-		count_var ++;
 	}
-	printf("end define variable\n");
-	/* end define mode */
-        if ((retval = nc_enddef(ncid)))
-                ERR(retval);
-	
-	for (ii = 0; ii < count_var; ii ++)
-	{
-		if ((retval = nc_var_par_access(ncid, varids[ii], NC_INDEPENDENT)))
-         	       ERR(retval);
-	}
-	
-	printf("start put in data\n");
-	/* write the data in ncfile */
-	int num_int = 0;
-	int num_char = 0;
-	int num_double = 0;
-	int num_short = 0;
-	int num_float = 0;
-	myv = dataxsz->varQ.front;
-	//dimnamePtr mydm;
-	int iii = 0;
-	int start_s = 1;
-	for (ii = 0; ii < count_var; ii ++)
-	{
-		myv = myv -> next;
-		start_s = 1;
-		start1 = (size_t*)malloc(atoi(myv->ndims));
-		count = (size_t*)malloc(atoi(myv->ndims));
-		printf("int : %d\n", ii);
-		mydm = myv->dimids.front;
-		iii = 0;
-		mydm = mydm ->next;
-		iii ++;
-		while (mydm -> next != NULL){
-		//	printf("")		
-			mydm = mydm->next;
-			start1[iii] = 0;
-			my = dataxsz->dimQ.front;
-			while (my->next != NULL){
-				my = my->next;
-				if (strcmp(my->name, mydm->name)){
-					count[iii] = atoi(my->length);
-					break;
+	/* convert the byte order */
+	else if(LSBFIRST == local_btd || MSBFIRST == local_btd) {
+		short sh;
+		int it;
+		long long ll;
+		unsigned short ush;
+		unsigned int uit;
+		unsigned long long ull;
+		unsigned long j;
+		for(i = 0; i < nvars; i++) {
+			if(NC_FLOAT == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].flt_data, vdat_list[i].nelmts, MPI_FLOAT, &status);
+			else if(NC_DOUBLE == vdat_list[i].type)
+				MPI_File_read(fp, vdat_list[i].dbl_data, vdat_list[i].nelmts, MPI_DOUBLE, &status);
+			else {
+				for(j = 0; j < vdat_list[i].nelmts; j++) {
+					if(NC_SHORT == vdat_list[i].type) {
+						MPI_File_read(fp, &sh, 1, MPI_SHORT, &status);
+						vdat_list[i].sht_data[j] = swap16(sh);
+					}
+					else if(NC_USHORT == vdat_list[i].type) {
+						MPI_File_read(fp, &ush, 1, MPI_UNSIGNED_SHORT, &status);
+						vdat_list[i].usht_data[j] = swap16(ush);
+					}
+					else if(NC_INT == vdat_list[i].type) {
+						MPI_File_read(fp, &it, 1, MPI_INT, &status);
+						vdat_list[i].int_data[j] = swap32(it);
+					}
+					else if(NC_UINT == vdat_list[i].type) {
+						MPI_File_read(fp, &uit, 1, MPI_UNSIGNED, &status);
+						vdat_list[i].uint_data[j] = swap32(uit);
+					}
+					else if(NC_INT64 == vdat_list[i].type) {
+						MPI_File_read(fp, &ll, 1, MPI_LONG_LONG, &status);
+						vdat_list[i].i64_data[j] = swap64(ll);
+					}
+					else if(NC_UINT64 == vdat_list[i].type) {
+						MPI_File_read(fp, &ull, 1, MPI_UNSIGNED_LONG_LONG, &status);
+						vdat_list[i].ui64_data[j] = swap64(ull);
+					}
 				}
 			}
-			start_s *= count[iii];
-			iii ++;
 		}
-		my = dataxsz->dimQ.front;
-		mydm = myv->dimids.front;
-		while (my->next != NULL){
-			my = my -> next;
-			if (strcmp(my->name, mydm->name)){
-				break;
-			}
-		}
-		start1[0] = (rank*atoi(my->length))/size;
-		count[0] = (rank + 1)*atoi(my->length)/size - rank*atoi(my->length)/size;
-		
-		start_s *= start1[0];
-		printf("variable type : ");
-		printf("%s\n", myv->type);	
-		if (strcmp(myv->type, "byte") == 0)
-		{
-			printf("byte\n");
-			if ((retval = nc_put_vara_int(ncid, varids[ii], start1, count, &intData[num_int][start_s])))
-                		ERR(retval);
-			num_int ++;
-		}
-
-		if (strcmp(myv->type, "short") == 0)
-		{
-			printf("short\n");
-			if ((retval = nc_put_vara_short(ncid, varids[ii], start1, count, &shortData[num_short][start_s])))
-                		ERR(retval);
-			num_short ++;
-		}
-
-		if (strcmp(myv->type, "int") == 0)
-		{
-			printf("int\n");
-			if ((retval = nc_put_vara_int(ncid, varids[ii], start1, count, &intData[num_int][start_s])))
-                		ERR(retval);
-			num_int ++;
-		}
-
-		if (strcmp(myv->type, "char") == 0)
-		{
-			printf("char\n");
-			if ((retval = nc_put_vara_text(ncid, varids[ii], start1, count, &charData[num_char][start_s])))
-                		ERR(retval);
-			num_char ++;
-		}
-
-		if (strcmp(myv->type, "float") == 0)
-		{
-			printf("float\n");
-			if ((retval = nc_put_vara_float(ncid, varids[ii], start1, count, &floatData[num_float][start_s])))
-                		ERR(retval);
-			num_float ++;
-		}
-
-		if (strcmp(myv->type, "double") == 0)
-		{
-			printf("double\n");
-			if ((retval = nc_put_vara_double(ncid, varids[ii], start1, count, &doubleData[num_double][start_s])))
-                		ERR(retval);
-			num_double ++;
-		}
-		
-		free(start1);
-		free(count);
 	}
-	printf("end put data\n");
-        /* close the file */
-        if ((retval = nc_close(ncid)))
-                ERR(retval);
-
-        printf("*** SUCCESS writing file %s!\n", argv[3]);
-
-    /* dimensionPtr my = dataxsz->dimQ.front;
-    int xszwyh = 0;
-    while (my != NULL){
-	xszwyh++;
-	printf("%s %s %s\n", my->name, my->length, "just do it");
-	my = my->next;
-    }
-//    printf("%d %s\n", xszwyh, "yes, we can");
-
-    xszwyh = 0;
-    variablePtr myv = dataxsz->varQ.front;
-    dimnamePtr mydm;
-    while (myv != NULL){
-	xszwyh ++;
-//	printf("%s %s %s %s\n", myv->name, myv->type, myv->ndims, "oh, my love");
-	
-	mydm = myv->dimids.front;
-	while (mydm != NULL){
-	//	printf("%s %s\n", mydm->name, "I can play");
-		mydm = mydm->next;
+	else {
+		fprintf(stderr, "can't get local byteorder\n");
+		exit(1);
 	}
-	myv = myv->next;
-   }*/
-  //  printf("%d %s\n", xszwyh, "yes, we can");
-    /*
-     * Cleanup function for the XML library.
-     */
-    xmlCleanupParser();
-    /*
-     * this is to debug memory for regression tests
-     */
-    xmlMemoryDump();
-    
-    //printf("%s %s\n", dataxsz->source_filename, "end");
-    MPI_Finalize();
-    return(0);
+
 }
-/*
-#else
-int main(void) {
-    fprintf(stderr, "XInclude support not compiled in\n");
-    exit(1);
-*/
+
+
+void write_nc_data(int pa_ncid, struct var_dat_t *vdat_p) {
+	int status;
+	size_t *start, *count; 
+	
+	start = (size_t *)malloc(vdat_p->ndims * sizeof(size_t));
+	count = (size_t *)malloc(vdat_p->ndims * sizeof(size_t));
+	MEMORY_CHECK(start);
+	MEMORY_CHECK(count);
+
+	set_hyperslab(count, start, vdat_p->dim_lens, vdat_p->ndims, 1, mpi_rank);
+	nc_var_par_access(pa_ncid, vdat_p->varid, NC_INDEPENDENT);
+	status = nc_put_vara(pa_ncid, vdat_p->varid, start, count, vdat_p->data);
+	NC_ASSERT(status);
+
+	free(start);
+	free(count);
+	free(vdat_p->data);
+}
+
+
+int main(int argc, char **argv) {
+	if(argc < 4) {
+		fprintf(stderr, "Usage: bin2nc4 xml-infile bin-infile nc-outfile\n");
+		exit(1);
+	}
+
+	int ncfile_id, grp_id;
+	int status;
+	long fsize;
+	size_t read_size;
+	char *fbuf;
+	FILE *fp;
+
+	MPI_Comm comm = MPI_COMM_WORLD;
+	MPI_Info mpi_info = MPI_INFO_NULL;
+
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(comm, &mpi_rank);
+	MPI_Comm_size(comm, &mpi_size);
+
+	//TODO: multiple processes write the variables
+	if(mpi_rank == 0) {
+		parser_xml_file(argv[1]);
+	
+		status = nc_create_par(argv[3], NC_NETCDF4 | NC_MPIIO, MPI_COMM_SELF, mpi_info, &ncfile_id); 
+		NC_ASSERT(status);
+		
+		write_nc_header(ncfile_id);
+		
+		read_bin(argv[2]);
+	
+		int i;
+		for(i = 0; i < nvars; i++) {
+			write_nc_data(ncfile_id, &vdat_list[i]);
+		}
+		NC_ASSERT(nc_close(ncfile_id));
+	}
+	MPI_Finalize();
+	return 0;
+}
+

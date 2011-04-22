@@ -22,6 +22,7 @@ extern struct dim_xml_t dim_list[DIM_MAX_NUM];
 extern int natts;
 extern int nvars;
 extern int ndims;
+extern int byteorder;
 
 void parse_dimension(struct dim_xml_t *dim, xmlNodePtr cur) {
 	dim->name = xmlGetProp(cur, "name");
@@ -75,6 +76,20 @@ int parser_xml_file(char *path){
 		fprintf(stderr, "empty cocument\n");
 		xmlFreeDoc(doc);
 		exit(1);
+	}
+	/* parser byteorder */
+	char *byte = NULL;
+	byte = xmlGetProp(cur, "byteorder");
+	//printf("bit: %s\n", bit);
+	if(byte) {
+		if(!(strcmp(byte, "LSBFIRST")))
+			byteorder = LSBFIRST;
+		else if(!(strcmp(byte, "MSBFIRST")))
+			byteorder = MSBFIRST;
+		else {
+			fprintf(stderr, "unrecognized byteorder string, you should use LSBFIRST or MSBFIRST\n");
+			exit(1);
+		}
 	}
 
 	cur = cur->xmlChildrenNode;

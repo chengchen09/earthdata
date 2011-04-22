@@ -288,15 +288,15 @@ void read_text(char *path) {
 					vdat_list[j].sht_data[data_cnt[j]] = (short)tmp;	
 				else if(NC_USHORT == vdat_list[j].type)
 					vdat_list[j].usht_data[data_cnt[j]] = (unsigned short)tmp;
-				else if(NC_INT == vdat_list[j].type)
+				if(NC_INT == vdat_list[j].type)
 					vdat_list[j].int_data[data_cnt[j]] = (int)tmp;	
 				else if(NC_UINT == vdat_list[j].type)
 					vdat_list[j].uint_data[data_cnt[j]] = (unsigned int)tmp;	
-				else if(NC_INT64 == vdat_list[j].type)
+				if(NC_INT64 == vdat_list[j].type)
 					vdat_list[j].i64_data[data_cnt[j]] = (long long)tmp;	
 				else if(NC_UINT64 == vdat_list[j].type)
 					vdat_list[j].ui64_data[data_cnt[j]] = (unsigned long long)tmp;
-				else if(NC_FLOAT == vdat_list[j].type)
+				if(NC_FLOAT == vdat_list[j].type)
 					vdat_list[j].flt_data[data_cnt[j]] = (float)tmp;	
 				else if(NC_DOUBLE == vdat_list[j].type)
 					vdat_list[j].dbl_data[data_cnt[j]] = tmp;	
@@ -317,6 +317,7 @@ void read_text(char *path) {
 void write_nc_data(int pa_ncid, struct var_dat_t *vdat_p) {
 	int status;
 	size_t *start, *count; 
+	//size_t *count;
 	
 	start = (size_t *)malloc(vdat_p->ndims * sizeof(size_t));
 	count = (size_t *)malloc(vdat_p->ndims * sizeof(size_t));
@@ -328,9 +329,6 @@ void write_nc_data(int pa_ncid, struct var_dat_t *vdat_p) {
 	status = nc_put_vara(pa_ncid, vdat_p->varid, start, count, vdat_p->data);
 	NC_ASSERT(status);
 
-	free(count);
-	free(start);
-	free(vdat_p->data);
 }
 
 
@@ -374,4 +372,16 @@ int main(int argc, char **argv) {
 	MPI_Finalize();
 	return 0;
 }
+
+	/*for(i = 0; i < ndims; i++)
+	  printf("dimension %s = %s\n", dim_list[i].name, dim_list[i].length);
+
+	for(i = 0; i < natts; i++)
+	  printf("attribute %s = %s\n", att_list[i].name, att_list[i].value);
+
+	for(i = 0; i < nvars; i++) {
+	  printf("variable %s %s %s\n", var_list[i].name, var_list[i].shape, var_list[i].type);
+	  for(j = 0; j < var_list[i].natts; j++)
+		  printf("\tattribute %s = %s\n", var_list[i].att_list[j].name, var_list[i].att_list[j].value);
+	}*/
 

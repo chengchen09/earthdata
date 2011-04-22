@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<netcdf byteorder="LSBFIRST">
+	<dimension name="x" length="4" />
+	<dimension name="y" length="4" />
+	<variable name="z" shape="y x" type="int 8">
+	</variable>
+	<attribute name="title" value="ETOPO1_Ice_c_gmt4.grd" />
+</netcdf>
