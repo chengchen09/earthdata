@@ -42,7 +42,7 @@ struct var_dat_t {
 	int ndims;
 	int stride;
 	int varid;
-	int *dim_lens;
+	size_t *dim_lens;
 	char **dim_names;
 	short *sht_data;
 	int *int_data;

@@ -18,4 +18,4 @@ complex_pk.c   Fix_ncep.c      Import.c        Misc.c        Netcdf_sup.c       
 Config.c       FlagTable.c     int8.c          missing.c     New_grid.c            Sec5.c          Tosubmsg.c \
 copy.c         flt2ieee.c      intpower.c      mk_kgds.c     Precision.c           Sec6.c          Undefine.c \
 crc32.c        flt2ieee_nan.c  Inv.c           Mod_grib.c    Prob.c                Sec_len.c       units.c \
-Csv.c          Flush.c         Inv_no.c        my_convert.c  prod_def_temp_size.c  seekgrib2.c     Unix_time.c 
+Csv.c          Flush.c         Inv_no.c my_convert.h  my_convert.c  prod_def_temp_size.c  seekgrib2.c     Unix_time.c 

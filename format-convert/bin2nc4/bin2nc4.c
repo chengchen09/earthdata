@@ -155,7 +155,7 @@ void write_nc_header(int grp_id) {
 	
 	for(i = 0; i < nvars; i++) {
 		/* dimension lens */
-		vdat_list[i].dim_lens = (int *) malloc(vdat_list[i].ndims * sizeof(int));
+		vdat_list[i].dim_lens = (size_t *) malloc(vdat_list[i].ndims * sizeof(size_t));
 		MEMORY_CHECK(vdat_list[i].dim_lens);
 	
 		/* dimension names */
