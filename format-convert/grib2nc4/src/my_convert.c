@@ -11,7 +11,7 @@
 
 #include <assert.h>
 #include <mpi.h>
-//#include "my_netcdf.h"
+#include "my_netcdf.h"
 #include "my_convert.h"
 
 //#define DEBUG_NC
