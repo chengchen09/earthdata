@@ -10,6 +10,7 @@
 #include "grib2.h"
 #include "my_netcdf.h"
 #include "my_grib2nc.h"
+#include "my_convert.h"
 #include "my_defs.h"
 #include "my_rd_grib2_msg.h"
 
