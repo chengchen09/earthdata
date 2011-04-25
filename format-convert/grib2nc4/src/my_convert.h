@@ -11,6 +11,8 @@ $licence$
 #ifndef MY_CONVERT_H
 #define MY_CONVERT_H
 
+#include "my_netcdf.h"
+
 int convert_nc_info(unsigned char **sec, float *data, unsigned int ndata, char *inv_out, nc_info_t **local);
 
 #endif
