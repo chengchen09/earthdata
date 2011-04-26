@@ -17,7 +17,8 @@
 //#define DEBUG_NC
 
 
-#if defined USE_NETCDF3 || defined USE_NETCDF4
+//#if defined USE_NETCDF3 || defined USE_NETCDF4
+#if 1
 #include <netcdf.h>
 
 /* defined in Netcdf_sup.c */
