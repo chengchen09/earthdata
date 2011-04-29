@@ -16,7 +16,7 @@ $licence$
 #define Y 4
 #define Z 4
 
-typedef long long dtype;
+typedef float dtype;
 
 int main(int argc, char **argv) {
 	int i; 
