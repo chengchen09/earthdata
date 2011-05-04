@@ -5,7 +5,7 @@ import netCDF4
 import numpy
 
 def gen():
-	f = netCDF4.Dataset('test.nc', 'w', format='NETCDF3_CLASSIC')
+	f = netCDF4.Dataset('test.nc3', 'w', format='NETCDF3_CLASSIC')
 	f.Convertions = 'CF 1.0'
 	f.history = 'now'
 	f.createDimension('x', 10)
@@ -15,6 +15,7 @@ def gen():
 	temp = f.createVariable('temp', 'i4', ('x', 'y'))
 	temp.unit = 'degrees'
 	temp.name = 'temprature'
+	#temp._FillValue = -100
 	lon[:] = numpy.arange(0, 10)
 	lat[:] = numpy.arange(40, 50)
 	temp[...] = -10
@@ -30,4 +31,4 @@ def gen_large():
 	f.close()	
 
 if __name__ == '__main__':
-	gen_large()
+	gen()

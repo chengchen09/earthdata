@@ -10,12 +10,18 @@ def usage(progname):
 	sys.exit(1)
 
 
-def get_chdims(ndims):
+def get_chdims(ncvar):
 	ch_dims = []
-	if 2 == ndims:
+	if 2 == ncvar.ndim:
 		ch_dims = [100, 100]
-	elif 3 == ndims:
+	elif 3 == ncvar.ndim:
 		ch_dims = [100, 100, 100]
+
+	vardims = list(ncvar.shape)
+	for i in range(ncvar.ndim):
+		if ch_dims[i] > vardims[i]:
+			ch_dims = vardims
+			break
 
 	return ch_dims
 
@@ -31,17 +37,15 @@ def nc32nc4_chunk(nc3path, nc4path):
 
 	# dimension
 	for dimname, dimobj in nc3_fh.dimensions.items():
-		#dims.append((dimname, len(dimobj), dimobj.isunlimited()))
 		nc4_fh.createDimension(dimname, len(dimobj))
 
 	# variables
 	for name in nc3_fh.variables.keys():
 		nc3var_h = nc3_fh.variables[name]
 		dimnames = nc3var_h.dimensions
-		print dimnames
 
 		if nc3var_h.ndim > 1:
-			ch_dims = get_chdims(nc3var_h.ndim)
+			ch_dims = get_chdims(nc3var_h)
 		
 			if len(ch_dims) < 2:
 				print 'dimension length is not supported'
@@ -69,10 +73,13 @@ def get_nc3_attrs(obj_h, attrs):
 		attrs.append((name, value))
 
 
+#TODO: set_attrs: _FillValue change to missing value, because the variable attribute has defined the _FillValue. missing_value is in the COARDS convention, and it is not recommanded in CF conventions but supported
 def set_nc4_attrs(obj_h, attrs):
 	for (name, value) in attrs:
-		obj_h.setncattr(name, value)
-
+		if 0 == cmp(name, '_FillValue'):
+			obj_h.missing_value = value
+		else:
+			obj_h.setncattr(name, value)
 
 def main():
 	if len(sys.argv) < 3:
